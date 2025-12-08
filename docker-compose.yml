@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Serviço de Banco de Dados
+  mariadb:
+    container_name: ${PROJECT_NAME}-db
+    image: mariadb:${MARIADB_TAG}
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MYSQL_DATABASE}
+      MARIADB_USER: ${MYSQL_USER}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - glpi-network
+    # Feature: Healthcheck para evitar erro de conexão no GLPI
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$$MARIADB_USER", "-p$$MARIADB_PASSWORD"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+
+  # Serviço da Aplicação GLPI
+  glpi:
+    container_name: ${PROJECT_NAME}-app
+    image: glpi/glpi:${GLPI_TAG}
+    restart: always
+    ports:
+      - "${HOST_PORT}:80"
+    environment:
+      # Credenciais (Padrão Oficial)
+      GLPI_DB_HOST: mariadb
+      GLPI_DB_NAME: ${MYSQL_DATABASE}
+      GLPI_DB_USER: ${MYSQL_USER}
+      GLPI_DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      # Feature: Pula o instalador para permitir o restore do dump
+      GLPI_FORCE_DB_CONNECTION: "true"
+    volumes:
+      # Feature: Volumes persistentes do seu projeto
+      - glpi_files:/var/www/html/files
+      - glpi_plugins:/var/www/html/plugins
+      - glpi_config:/var/www/html/config
+      - glpi_logs:/var/www/html/logs
+      # Volumes padrão exigidos
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - glpi-network
+    # Garante que o GLPI só inicie quando o banco estiver 100% pronto
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+volumes:
+  mariadb_data:
+  glpi_files:
+  glpi_plugins:
+  glpi_config:
+  glpi_logs:
+
+networks:
+  glpi-network:
+    driver: bridge

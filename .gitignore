@@ -1,0 +1,38 @@
+# --- Segurança e Configuração Local ---
+.env
+
+# --- Dumps e Backups de Banco de Dados ---
+# Ignora arquivos SQL, pois podem conter dados sensíveis e são grandes
+ferramentas/sql_dump_restore/*.sql
+ferramentas/*.sql
+*.sql
+
+# Mantém o arquivo .gitkeep se existir (para manter pastas vazias no git), mas ignora o resto
+!ferramentas/sql_dump_restore/.gitkeep
+
+# --- Volumes e Dados do Docker ---
+mariadb_data/
+glpi_files/
+glpi_plugins/
+glpi_config/
+glpi_logs/
+glpi_marketplace/
+
+# --- Arquivos de Sistema/IDE ---
+.DS_Store
+.idea/
+.vscode/
+
+
+.env
+*.sql
+*.sql.usado
+ferramentas/sql_dump_restore/*.sql
+ferramentas/sql_dump_restore/*.usado
+mariadb_data/
+glpi_files/
+glpi_plugins/
+glpi_config/
+glpi_logs/
+glpi_marketplace/
+.DS_Store
