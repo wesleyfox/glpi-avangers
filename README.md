@@ -20,7 +20,7 @@ glpi-avangers/
 
 ---
 
-## 🚀 Como Usar (3 Passos)
+## 🚀 Como Executar o restore_dump.sh
 
 ### 1. Configuração
 
@@ -40,12 +40,17 @@ Suba os containers e rode o script:
 
 ```bash
 docker compose up -d
+```
+
+Após os containers concluirem suas etapas de configuração, rode o sript `restore_dump.sh`
+
+```bash
 ./ferramentas/restore_dump.sh
 ```
 
-### 4. Passo-a-Passo Didático da Migração (Fluxo Full)
+### 4. Passo-a-Passo Didático da Migração
 
-Se você vai migrar da versão 9.4 para a 11, siga este roteiro:
+Se você vai migrar da versão 9.4(.sql) para a versões atuais (Testado nas versões: 10, 11), siga este roteiro:
 
 1. **Inicie o Script:** Escolha a Opção 1.
 2. **Confirme o Arquivo:** O script achará seu .sql e importará.
