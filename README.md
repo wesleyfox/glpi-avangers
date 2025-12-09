@@ -1,4 +1,3 @@
-```markdown
 # 🛡️ GLPI Avengers
 
 Ambiente Docker automatizado para migrações e upgrades de versões modernas (v10/v11), com suporte para .sql e resolução automática de conflitos de banco de dados.
