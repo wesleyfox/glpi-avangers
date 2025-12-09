@@ -120,25 +120,29 @@ step_wait_web() {
     done
 }
 
-# --- MÓDULO: OTIMIZAÇÃO ---
+# --- MÓDULO: OTIMIZAÇÃO (Corrigido) ---
 step_optimize() {
     echo ""
     echo "⚡ [4/4] Executando OTIMIZAÇÕES PÓS-MIGRAÇÃO..."
+    echo "⚠️  ATENÇÃO: A etapa 'Unsigned Keys' é demorada. Não feche o terminal."
+    echo "ℹ️  Nota: Ignore avisos sobre rodar como 'root', estamos forçando a execução."
     
     if ! docker ps --format '{{.Names}}' | grep -q "^${APP_CONTAINER}$"; then
         echo "❌ Erro: Container App '${APP_CONTAINER}' parado."
         exit 1
     fi
 
-    # CORREÇÃO APLICADA: Adicionada flag --allow-superuser
+    # CORREÇÃO: Removemos '--allow-superuser' (que não existe nesses comandos)
+    # e usamos 'echo y' para passar pelo prompt de confirmação interativo.
+    
     echo "   > (1/3) Migrando Timestamps..."
-    docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:timestamps --no-interaction --allow-superuser
+    echo "y" | docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:timestamps
     
     echo "   > (2/3) Migrando UTF8mb4..."
-    docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:utf8mb4 --no-interaction --allow-superuser
+    echo "y" | docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:utf8mb4
     
     echo "   > (3/3) Otimizando Chaves Inteiras (Unsigned)..."
-    docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:unsigned_keys --no-interaction --allow-superuser
+    echo "y" | docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:unsigned_keys
     
     echo "✅ Otimização concluída."
 }
