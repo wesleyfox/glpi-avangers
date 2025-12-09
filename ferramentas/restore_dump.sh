@@ -32,7 +32,6 @@ check_containers() {
 }
 
 get_sql_file() {
-    # Busca arquivos .sql ignorando os .usado
     local FILES=()
     while IFS= read -r -d $'\0'; do FILES+=("$REPLY"); done < <(find "$SQL_DIR" -maxdepth 1 -type f -name "*.sql" ! -name "*.usado" -print0)
     local NUM_FILES=${#FILES[@]}
@@ -72,35 +71,23 @@ step_restore() {
     fi
 }
 
-# --- MÓDULO: LIMPEZA (A Vacina contra erros) ---
+# --- MÓDULO: LIMPEZA ---
 step_cleanup() {
     echo ""
     echo "🧹 [2/4] Executando LIMPEZA PREVENTIVA de tabelas conflitantes..."
     
-    # Lista ACUMULATIVA de conflitos (9.4 -> 11.0)
     local CLEANUP_SQL="USE ${MYSQL_DATABASE};
-    -- 1. Conflitos Plugin Appliances
     DROP TABLE IF EXISTS glpi_appliances_items_relations;
     DROP TABLE IF EXISTS glpi_appliances;
-    
-    -- 2. Lixo de Software (Legacy)
     DROP TABLE IF EXISTS glpi_computers_softwareversions;
     DROP TABLE IF EXISTS glpi_computers_softwarelicenses;
-    
-    -- 3. Conflitos Antivirus (v10/11)
     DROP TABLE IF EXISTS glpi_itemantiviruses;
-    
-    -- 4. Conflitos Assets & Peripherals (v11)
     DROP TABLE IF EXISTS glpi_assets_assets_peripheralassets;
-    
-    -- 5. Conflitos PDU Plugs (Energia)
     DROP TABLE IF EXISTS glpi_items_plugs;
-    
-    -- 6. Conflitos Virtual Machines (v11)
     DROP TABLE IF EXISTS glpi_itemvirtualmachines;"
 
     echo "$CLEANUP_SQL" | docker exec -i ${DB_CONTAINER} mariadb -u${MYSQL_USER} -p${MYSQL_PASSWORD}
-    echo "✅ Tabelas conflitantes removidas. Caminho livre para atualização."
+    echo "✅ Tabelas conflitantes removidas."
 }
 
 # --- MÓDULO: PAUSA WEB ---
@@ -111,7 +98,6 @@ step_wait_web() {
     echo "=========================================================="
     echo "1. Abra: http://localhost:$HOST_PORT"
     echo "2. Realize a atualização (Update) pela interface."
-    echo "   (Graças à limpeza, não deve haver erros de bloqueio)"
     echo "3. Aguarde até ver a tela de Login ou 'Update Successful'."
     echo "=========================================================="
     while true; do
@@ -120,29 +106,33 @@ step_wait_web() {
     done
 }
 
-# --- MÓDULO: OTIMIZAÇÃO (Corrigido) ---
+# --- MÓDULO: OTIMIZAÇÃO (Check de Integridade Adicionado) ---
 step_optimize() {
     echo ""
     echo "⚡ [4/4] Executando OTIMIZAÇÕES PÓS-MIGRAÇÃO..."
     echo "⚠️  ATENÇÃO: A etapa 'Unsigned Keys' é demorada. Não feche o terminal."
-    echo "ℹ️  Nota: Ignore avisos sobre rodar como 'root', estamos forçando a execução."
     
     if ! docker ps --format '{{.Names}}' | grep -q "^${APP_CONTAINER}$"; then
         echo "❌ Erro: Container App '${APP_CONTAINER}' parado."
         exit 1
     fi
 
-    # CORREÇÃO: Removemos '--allow-superuser' (que não existe nesses comandos)
-    # e usamos 'echo y' para passar pelo prompt de confirmação interativo.
+    echo "   > (1/4) Migrando Timestamps..."
+    echo "y" | docker exec -u www-data -i ${APP_CONTAINER} php bin/console glpi:migration:timestamps
     
-    echo "   > (1/3) Migrando Timestamps..."
-    echo "y" | docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:timestamps
+    echo "   > (2/4) Migrando UTF8mb4..."
+    echo "y" | docker exec -u www-data -i ${APP_CONTAINER} php bin/console glpi:migration:utf8mb4
     
-    echo "   > (2/3) Migrando UTF8mb4..."
-    echo "y" | docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:utf8mb4
-    
-    echo "   > (3/3) Otimizando Chaves Inteiras (Unsigned)..."
-    echo "y" | docker exec -i ${APP_CONTAINER} php bin/console glpi:migration:unsigned_keys
+    echo "   > (3/4) Otimizando Chaves Inteiras (Unsigned)..."
+    echo "y" | docker exec -u www-data -i ${APP_CONTAINER} php bin/console glpi:migration:unsigned_keys
+
+    echo ""
+    echo "🔎 [DIAGNÓSTICO] Verificando integridade do esquema..."
+    echo "   (Se aparecerem avisos abaixo, são colunas sobrando de plugins antigos."
+    echo "    Geralmente é seguro ignorar se o sistema estiver funcionando.)"
+    echo "---------------------------------------------------------------------"
+    docker exec -u www-data -i ${APP_CONTAINER} php bin/console database:check_schema_integrity
+    echo "---------------------------------------------------------------------"
     
     echo "✅ Otimização concluída."
 }
@@ -168,7 +158,7 @@ echo "Selecione o modo de operação:"
 echo "  1) 🚀 MIGRAÇÃO FULL (Restore -> Limpeza -> Web -> Otimização)"
 echo "  2) 💾 Apenas Restore (Injeta o .sql e renomeia)"
 echo "  3) 🧹 Apenas Limpeza (Remove tabelas de conflito conhecidas)"
-echo "  4) ⚡ Apenas Otimização (Roda scripts de performance)"
+echo "  4) ⚡ Apenas Otimização (Roda scripts de performance + Diagnóstico)"
 echo ""
 read -p "Opção: " OPTION
 
