@@ -16,7 +16,7 @@ glpi-avangers/
 
 ## ✨ Script restore_dump.sh
 
-* ✅ **Migração Apartir de .sql:** Leva dados da v9.4.5(.sql) para versões atuais. Aplica correções de performance (UTF8mb4, Timestamps, Unsigned Keys) pós-migração.
+* ✅ **Migração Apartir de .sql:** Leva dados da v9.4.5(.sql) para versões atuais(v10, v11). Aplica correções de performance (UTF8mb4, Timestamps, Unsigned Keys) pós-migração.
 
 ---
 
@@ -36,7 +36,7 @@ Coloque seu arquivo `.sql` (da versão antiga) na pasta:
 
 ### 3. Execute a Mágica
 
-Suba os containers e rode o script:
+Suba os containers:
 
 ```bash
 docker compose up -d
@@ -50,7 +50,7 @@ Após os containers concluirem suas etapas de configuração, rode o sript `rest
 
 ### 4. Passo-a-Passo Didático da Migração
 
-Se você vai migrar da versão 9.4(.sql) para a versões atuais (Testado nas versões: 10, 11), siga este roteiro:
+Se você vai migrar da versão 9.4(.sql) para a versões atuais do GLPI(v10, v11), siga este roteiro:
 
 1. **Inicie o Script:** Escolha a Opção 1.
 2. **Confirme o Arquivo:** O script achará seu .sql e importará.
