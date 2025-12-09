@@ -1,7 +1,4 @@
-Aqui está o conteúdo do **README.md** em formato de texto puro. Você pode copiar tudo que está dentro do bloco abaixo e salvar no seu arquivo.
-
-````text
-# 🛡️ GLPI Avengers: Docker & Migration Toolkit
+# 🛡️ GLPI Avengers: Ambiente Docker com Suporte para Migrações e Upgrades
 
 Ambiente Docker automatizado para migração de GLPI legado (v9.4) para versões modernas (v10/v11), com tratamento automático de conflitos de banco de dados.
 
